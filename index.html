@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/eclipse.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/lint/lint.min.css" />
 
   <!-- App styles -->
   <link rel="stylesheet" href="style.css" />
@@ -44,7 +46,97 @@
 
     <!-- Left: code editor -->
     <div id="editor-pane">
-      <div class="pane-label">Python  <span class="kbd">⌘↩</span> force refresh</div>
+      <div class="pane-label">
+        Python  <span class="kbd">⌘↩</span> force refresh
+        <button id="btn-syntax-ref" class="ref-toggle" title="Python syntax reference">?</button>
+      </div>
+
+      <!-- Syntax reference panel (toggleable) -->
+      <div id="syntax-ref-panel" hidden>
+        <div class="ref-close" id="btn-ref-close">✕</div>
+
+        <div class="ref-section">
+          <div class="ref-title">Class with __init__</div>
+          <pre class="ref-snippet">class MyClass:
+    def __init__(self, x: int):
+        self.x = x</pre>
+        </div>
+
+        <div class="ref-section">
+          <div class="ref-title">Inheritance</div>
+          <pre class="ref-snippet">class Child(Parent):
+    def __init__(self, x: int):
+        super().__init__(x)
+        self.extra: str = ""</pre>
+        </div>
+
+        <div class="ref-section">
+          <div class="ref-title">Abstract class</div>
+          <pre class="ref-snippet">from abc import ABC, abstractmethod
+
+class Interface(ABC):
+    @abstractmethod
+    def method(self) -> None:
+        pass</pre>
+        </div>
+
+        <div class="ref-section">
+          <div class="ref-title">Type hints</div>
+          <pre class="ref-snippet">from typing import List, Optional, Dict
+
+class Repo:
+    items: List[str]
+    cache: Optional[Dict[str, int]]</pre>
+        </div>
+
+        <div class="ref-section">
+          <div class="ref-title">Strategy pattern</div>
+          <pre class="ref-snippet">class Strategy(ABC):
+    @abstractmethod
+    def execute(self) -> None: pass
+
+class Context:
+    def __init__(self, s: Strategy):
+        self._strategy = s
+    def run(self) -> None:
+        self._strategy.execute()</pre>
+        </div>
+
+        <div class="ref-section">
+          <div class="ref-title">Observer pattern</div>
+          <pre class="ref-snippet">class Observer(ABC):
+    @abstractmethod
+    def update(self, data) -> None: pass
+
+class Subject:
+    def __init__(self):
+        self._observers: List[Observer] = []
+    def notify(self, data) -> None:
+        for o in self._observers:
+            o.update(data)</pre>
+        </div>
+
+        <div class="ref-section">
+          <div class="ref-title">Singleton pattern</div>
+          <pre class="ref-snippet">class Singleton:
+    _instance = None
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance</pre>
+        </div>
+
+        <div class="ref-section">
+          <div class="ref-title">Factory method</div>
+          <pre class="ref-snippet">class Creator(ABC):
+    @abstractmethod
+    def create(self) -> Product: pass
+    def operation(self) -> str:
+        p = self.create()
+        return p.do_work()</pre>
+        </div>
+      </div>
+
       <textarea id="code-editor"></textarea>
     </div>
 
@@ -80,6 +172,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/anyword-hint.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/lint/lint.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 

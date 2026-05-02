@@ -97,6 +97,96 @@
     });
   }
 
+  // ── Python lint helper ────────────────────────────────────────────────────
+  // Checks class/def lines for missing ':' when brackets are balanced.
+  CodeMirror.registerHelper('lint', 'python', function(text) {
+    const found = [];
+    const lines  = text.split('\n');
+    let parenDepth = 0;
+
+    lines.forEach((rawLine, i) => {
+      // Strip string literals (rough) and inline comments so we don't
+      // count parens inside strings/comments.
+      const stripped = rawLine
+        .replace(/(['"]).*?\1/g, '""')   // simple single/double quoted strings
+        .replace(/#.*$/, '');             // inline comments
+
+      for (const ch of stripped) {
+        if ('([{'.includes(ch)) parenDepth++;
+        else if (')]}'.includes(ch)) parenDepth = Math.max(0, parenDepth - 1);
+      }
+
+      const trimmed = rawLine.trim();
+      if (!trimmed || trimmed.startsWith('#')) return;
+
+      // class / def with balanced parens must end with ':'
+      if (/^(class|def)\s+/.test(trimmed) && parenDepth === 0) {
+        const clean = stripped.trimEnd();
+        if (clean && !clean.endsWith(':')) {
+          found.push({
+            from:     CodeMirror.Pos(i, 0),
+            to:       CodeMirror.Pos(i, rawLine.length),
+            message:  trimmed.startsWith('class')
+              ? "Class definition is missing ':'"
+              : "Function definition is missing ':'",
+            severity: 'error',
+          });
+        }
+      }
+    });
+
+    return found;
+  });
+
+  // ── Python autocomplete hint function ─────────────────────────────────────
+  // Merges anyword-from-document with Python + LLD keyword list.
+  const PY_KEYWORDS = [
+    // Python core
+    'class','def','self','super','return','pass','None','True','False',
+    'import','from','as','if','else','elif','for','while','in','not','and','or',
+    'with','raise','try','except','finally','lambda','yield','assert','del',
+    // Magic methods
+    '__init__','__str__','__repr__','__len__','__eq__','__hash__',
+    '__call__','__enter__','__exit__','__iter__','__next__','__new__',
+    // Type hints
+    'str','int','float','bool','list','dict','tuple','set',
+    'Optional','List','Dict','Tuple','Set','Union','Any','Callable',
+    // abc / decorators
+    'ABC','abstractmethod','property','staticmethod','classmethod',
+    // Common builtins
+    'append','remove','extend','insert','pop','update','get',
+    'isinstance','hasattr','getattr','setattr','len','range','print',
+    // LLD / design-pattern words
+    'Observer','Subject','Strategy','Context','Factory','Creator','Product',
+    'Singleton','Decorator','Component','Builder','Director','Command',
+    'Receiver','Invoker','Handler','Client','Adapter','Facade','Proxy',
+  ];
+
+  function pythonHint(cm) {
+    const cursor = cm.getCursor();
+    const token  = cm.getTokenAt(cursor);
+
+    // Don't hint inside comments or string literals
+    if (token.type === 'comment' || token.type === 'string') return;
+
+    const anyResult = CodeMirror.hint.anyword(cm) || {
+      list: [], from: cursor, to: cursor,
+    };
+
+    const word = token.string.toLowerCase();
+    const inDoc = new Set(anyResult.list);
+
+    const extra = PY_KEYWORDS.filter(k =>
+      k.toLowerCase().startsWith(word) && k !== token.string && !inDoc.has(k)
+    );
+
+    return {
+      list: [...anyResult.list, ...extra],
+      from: anyResult.from,
+      to:   anyResult.to,
+    };
+  }
+
   // ── Mermaid init ──────────────────────────────────────────────────────────
   mermaid.initialize(MERMAID_LIGHT);
 
@@ -111,13 +201,21 @@
     matchBrackets: true,
     autoCloseBrackets: true,
     lineWrapping: false,
+    gutters: ['CodeMirror-lint-markers'],
+    lint: { lintOnChange: true, delay: 400 },
     extraKeys: {
+      // Smart indent: indent current line(s) respecting Python context
       Tab: cm => {
-        if (cm.somethingSelected()) cm.indentSelection('add');
-        else cm.replaceSelection('    ', 'end');
+        if (cm.somethingSelected()) {
+          cm.indentSelection('add');
+        } else {
+          cm.execCommand('indentMore');
+        }
       },
+      'Shift-Tab': cm => cm.indentSelection('subtract'),
       'Ctrl-Enter': () => render(true),
       'Cmd-Enter':  () => render(true),
+      'Ctrl-Space': cm => CodeMirror.showHint(cm, pythonHint, { completeSingle: false }),
     },
   });
 
@@ -139,6 +237,25 @@
     clearTimeout(debounceTimer);
     setStatus('typing…', 'idle');
     debounceTimer = setTimeout(() => render(false), 400);
+  });
+
+  // Auto-trigger autocomplete while typing (skip navigation/modifier keys)
+  const NO_HINT_KEYS = new Set([
+    'ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter','Escape','Tab',
+    'Backspace','Delete','Home','End','PageUp','PageDown',
+    'Shift','Control','Alt','Meta','CapsLock',
+    'F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12',
+  ]);
+  editor.on('keyup', (cm, event) => {
+    if (NO_HINT_KEYS.has(event.key)) return;
+    if (cm.state.completionActive) return;
+    const cursor = cm.getCursor();
+    const token  = cm.getTokenAt(cursor);
+    if (token.type === 'comment' || token.type === 'string') return;
+    // Trigger after 2+ characters of a word
+    if (token.string && token.string.trim().length >= 2 && /\w/.test(token.string)) {
+      CodeMirror.showHint(cm, pythonHint, { completeSingle: false });
+    }
   });
 
   async function render(force = false) {
@@ -411,6 +528,21 @@ class Shelter:
     def list_animals(self) -> List[Animal]:
         return self.animals
 `;
+
+  // ── Syntax reference panel ────────────────────────────────────────────────
+  const refPanel   = document.getElementById('syntax-ref-panel');
+  const btnRef     = document.getElementById('btn-syntax-ref');
+  const btnRefClose = document.getElementById('btn-ref-close');
+
+  btnRef.addEventListener('click', () => {
+    const isHidden = refPanel.hidden;
+    refPanel.hidden = !isHidden;
+    btnRef.classList.toggle('ref-toggle-active', isHidden);
+  });
+  btnRefClose.addEventListener('click', () => {
+    refPanel.hidden = true;
+    btnRef.classList.remove('ref-toggle-active');
+  });
 
   editor.setValue(STARTER);
   render(true);

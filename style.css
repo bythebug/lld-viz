@@ -214,6 +214,9 @@ body {
   color: var(--label-fg);
   border-bottom: 1px solid rgba(255,255,255,0.05);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .CodeMirror {
@@ -376,6 +379,145 @@ body {
   font-weight: 600;
 }
 .status-credit a:hover { text-decoration: underline; }
+
+/* ── Autocomplete dropdown ──────────────────────────────────────────── */
+.CodeMirror-hints {
+  background: #1e1c3a !important;
+  border: 1px solid #7776bc !important;
+  border-radius: 6px !important;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3) !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace !important;
+  font-size: 12px !important;
+  padding: 4px 0 !important;
+  z-index: 100 !important;
+  max-height: 220px !important;
+}
+
+.CodeMirror-hint {
+  color: #cdc7e5 !important;
+  padding: 3px 14px !important;
+  border-radius: 0 !important;
+  white-space: nowrap !important;
+}
+
+li.CodeMirror-hint-active {
+  background: #7776bc !important;
+  color: #ffffff !important;
+}
+
+/* ── Lint error markers ─────────────────────────────────────────────── */
+.CodeMirror-lint-mark-error {
+  border-bottom: 2px wavy #ff674d;
+}
+
+.CodeMirror-lint-marker-error {
+  background: none;
+  width: 4px;
+  height: 100%;
+  background-color: #ff674d;
+}
+
+.CodeMirror-lint-tooltip {
+  background: #1e1c3a !important;
+  border: 1px solid #ff674d !important;
+  color: #fca5a5 !important;
+  border-radius: 5px !important;
+  font-family: ui-monospace, monospace !important;
+  font-size: 12px !important;
+  padding: 6px 10px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+}
+
+/* ── Syntax reference panel ─────────────────────────────────────────── */
+#editor-pane { position: relative; }
+
+#syntax-ref-panel {
+  position: absolute;
+  top: 32px;        /* sits just below the pane label */
+  right: 0;
+  width: 300px;
+  max-height: calc(100% - 32px);
+  overflow-y: auto;
+  background: #1e1c3a;
+  border-left: 2px solid #7776bc;
+  z-index: 20;
+  padding: 10px 12px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: #7776bc transparent;
+  box-shadow: -4px 0 16px rgba(0,0,0,0.25);
+}
+
+#syntax-ref-panel::-webkit-scrollbar { width: 5px; }
+#syntax-ref-panel::-webkit-scrollbar-thumb {
+  background: #7776bc;
+  border-radius: 3px;
+}
+
+.ref-close {
+  display: block;
+  text-align: right;
+  cursor: pointer;
+  font-size: 12px;
+  color: #7776bc;
+  padding: 2px 4px;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.ref-close:hover { color: #ff674d; }
+
+.ref-section { margin-bottom: 14px; }
+
+.ref-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ff674d;
+  margin-bottom: 5px;
+}
+
+.ref-snippet {
+  background: #14122e;
+  border: 1px solid rgba(119,118,188,0.25);
+  border-radius: 4px;
+  padding: 7px 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #cdc7e5;
+  white-space: pre;
+  overflow-x: auto;
+  margin: 0;
+}
+
+/* ── Syntax ref toggle button ───────────────────────────────────────── */
+.ref-toggle {
+  margin-left: auto;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--label-fg);
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+}
+
+.ref-toggle:hover,
+.ref-toggle-active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
 
 /* ── Keyboard hint ──────────────────────────────────────────────────── */
 .kbd {
