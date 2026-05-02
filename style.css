@@ -1,0 +1,411 @@
+/* ── Reset & base ───────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── LIGHT MODE — Glaucous / Periwinkle / Yellow / Tomato palette ───── */
+/*   #7776bc Glaucous · #cdc7e5 Periwinkle · #fffbdb Light Yellow        */
+/*   #ffec51 Banana Cream · #ff674d Tomato                                */
+:root {
+  --header-h: 52px;
+  --bg:              #fffbdb;   /* Light Yellow — page bg */
+  --surface:         #ffffff;
+  --border:          #cdc7e5;   /* Periwinkle */
+
+  /* Header */
+  --header-bg:       #7776bc;   /* Glaucous */
+  --header-fg:       #ffffff;
+  --header-border:   rgba(255,255,255,0.18);
+
+  /* Accent */
+  --accent:          #ff674d;   /* Tomato */
+  --accent-hover:    #e0503a;
+
+  /* Badges */
+  --badge-bg:        #ff674d;   /* Tomato */
+  --badge-fg:        #fff;
+
+  /* Buttons */
+  --btn-bg:          #7776bc;   /* Glaucous */
+  --btn-fg:          #ffffff;
+  --btn-hover-bg:    #ff674d;   /* Tomato on hover */
+  --btn-hover-fg:    #ffffff;
+
+  /* Pane labels */
+  --label-bg:        #5a59a0;   /* slightly darker Glaucous */
+  --label-fg:        #cdc7e5;   /* Periwinkle */
+
+  /* Status bar */
+  --status-bar-bg:   #5a59a0;
+  --status-bar-border: rgba(255,255,255,0.1);
+  --status-fg:       #cdc7e5;
+  --credit-fg:       #a8a6d8;
+
+  /* Splitter */
+  --splitter-bg:     #7776bc;
+  --splitter-hover:  #ff674d;
+
+  /* Diagram pane */
+  --diagram-bg:      #fffbdb;   /* Light Yellow */
+  --diagram-label-bg: #5a59a0;
+  --empty-fg:        #a8a6d0;
+
+  /* Select */
+  --select-option-bg: #5a59a0;
+  --select-option-fg: #ffffff;
+
+  /* Zoom level text */
+  --zoom-fg:         #cdc7e5;
+  font-size: 14px;
+}
+
+/* ── DARK MODE (commented out for now) ─────────────────────────────── */
+/*
+body.dark {
+  --bg:              #0f0f1a;
+  --surface:         #1a1a2e;
+  --border:          #2d2d4e;
+  --header-bg:       #0d0d1a;
+  --header-fg:       #e2e8f0;
+  --header-border:   rgba(255,255,255,0.07);
+  --accent:          #6366f1;
+  --accent-hover:    #4f46e5;
+  --badge-bg:        #6366f1;
+  --badge-fg:        #fff;
+  --btn-bg:          #16213e;
+  --btn-fg:          #a8b2c3;
+  --btn-hover-bg:    #1f2e5e;
+  --btn-hover-fg:    #ffffff;
+  --label-bg:        #0d0d1a;
+  --label-fg:        #4a5568;
+  --status-bar-bg:   #0d0d1a;
+  --status-bar-border: rgba(255,255,255,0.05);
+  --status-fg:       #4a5568;
+  --credit-fg:       #3a4558;
+  --splitter-bg:     #1a1a2e;
+  --splitter-hover:  #6366f1;
+  --diagram-bg:      #1a1a2e;
+  --diagram-label-bg: #0d0d1a;
+  --empty-fg:        #3a4568;
+  --select-option-bg: #0d0d1a;
+  --select-option-fg: #e2e8f0;
+  --zoom-fg:         #4a5568;
+}
+*/
+
+/* ── Body ────────────────────────────────────────────────────────────── */
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: #1e293b;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* body.dark { color: #e2e8f0; } */
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+#app-header {
+  height: var(--header-h);
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--header-border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+#app-header h1 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--header-fg);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+#app-header h1 span { color: var(--accent); }
+
+/* ── Pattern badges ─────────────────────────────────────────────────── */
+#pattern-badges {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.badge {
+  background: var(--badge-bg);
+  color: var(--badge-fg);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+  animation: badge-in 0.2s ease;
+}
+
+@keyframes badge-in {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── Header controls ────────────────────────────────────────────────── */
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.hbtn, #example-select {
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+  height: 30px;
+  display: flex;
+  align-items: center;
+}
+
+.hbtn:hover, #example-select:hover {
+  background: var(--btn-hover-bg);
+  color: var(--btn-hover-fg);
+}
+
+#example-select option {
+  background: var(--select-option-bg);
+  color: var(--select-option-fg);
+}
+
+/* ── Split container ────────────────────────────────────────────────── */
+#split-container {
+  display: grid;
+  grid-template-columns: 1fr 6px 1fr;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── Editor pane ────────────────────────────────────────────────────── */
+#editor-pane {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.pane-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  background: var(--label-bg);
+  color: var(--label-fg);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  flex-shrink: 0;
+}
+
+.CodeMirror {
+  flex: 1 !important;
+  height: 100% !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Cascadia Code', monospace !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+.CodeMirror-scroll { height: 100% !important; }
+
+/* ── Splitter ───────────────────────────────────────────────────────── */
+#splitter {
+  width: 100%;
+  background: var(--splitter-bg);
+  cursor: col-resize;
+  position: relative;
+  z-index: 5;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#splitter:hover { background: var(--splitter-hover); }
+
+#splitter::after {
+  content: '';
+  display: block;
+  width: 2px;
+  height: 32px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 1px;
+}
+
+/* ── Diagram pane ───────────────────────────────────────────────────── */
+#diagram-pane {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+  background: var(--diagram-bg);
+  transition: background 0.2s;
+}
+
+#diagram-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: var(--diagram-label-bg);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  flex-shrink: 0;
+}
+
+#diagram-output {
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  background: var(--diagram-bg);
+  transition: background 0.2s;
+}
+
+#diagram-output svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.10));
+  transition: filter 0.2s;
+}
+
+/* body.dark #diagram-output svg {
+  filter: drop-shadow(0 2px 12px rgba(0,0,0,0.45));
+} */
+
+.empty-state {
+  color: var(--empty-fg);
+  font-size: 13px;
+  text-align: center;
+  margin-top: 60px;
+  line-height: 2;
+  padding: 0 32px;
+}
+
+/* ── Zoom controls ──────────────────────────────────────────────────── */
+#zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.zbtn {
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s;
+  line-height: 1;
+}
+.zbtn:hover { background: var(--btn-hover-bg); color: var(--btn-hover-fg); }
+
+#zoom-level {
+  font-size: 11px;
+  color: var(--zoom-fg);
+  min-width: 36px;
+  text-align: center;
+  font-family: ui-monospace, monospace;
+}
+
+/* ── Status bar ─────────────────────────────────────────────────────── */
+#status-bar {
+  height: 28px;
+  background: var(--status-bar-bg);
+  border-top: 1px solid var(--status-bar-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  flex-shrink: 0;
+}
+
+.status {
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  transition: color 0.2s;
+}
+.status-idle  { color: #cdc7e5; }
+.status-busy  { color: #ffec51; }
+.status-ok    { color: #10b981; }
+.status-error { color: #ff674d; }
+
+/* body.dark .status-idle { color: #4a5568; } */
+/* body.dark .status-busy  { color: #f59e0b; } */
+
+.status-credit {
+  font-size: 11px;
+  color: var(--credit-fg);
+  font-family: system-ui, sans-serif;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.status-credit a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+.status-credit a:hover { text-decoration: underline; }
+
+/* ── Keyboard hint ──────────────────────────────────────────────────── */
+.kbd {
+  display: inline-block;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: var(--label-fg);
+  margin-left: 6px;
+}
+
+/* ── Scrollbars ─────────────────────────────────────────────────────── */
+#diagram-output::-webkit-scrollbar { width: 8px; height: 8px; }
+#diagram-output::-webkit-scrollbar-track { background: transparent; }
+#diagram-output::-webkit-scrollbar-thumb {
+  background: rgba(100,80,60,0.2);
+  border-radius: 4px;
+}
+#diagram-output::-webkit-scrollbar-thumb:hover {
+  background: rgba(100,80,60,0.4);
+}
+body.dark #diagram-output::-webkit-scrollbar-thumb {
+  background: rgba(100,100,120,0.3);
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  #split-container { grid-template-columns: 1fr 0 0; }
+  #splitter, #diagram-pane { display: none; }
+}

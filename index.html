@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLD Visualizer</title>
+
+  <!-- CodeMirror 5 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/eclipse.min.css" />
+
+  <!-- App styles -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── Header ─────────────────────────────────────────────────────── -->
+  <header id="app-header">
+    <h1>LLD <span>Viz</span></h1>
+
+    <div id="pattern-badges"></div>
+
+    <div class="header-controls">
+      <select id="example-select" title="Load a design pattern example">
+        <option value="">Load example…</option>
+        <option value="singleton">Singleton</option>
+        <option value="observer">Observer</option>
+        <option value="strategy">Strategy</option>
+        <option value="factory">Factory Method</option>
+        <option value="decorator">Decorator</option>
+        <option value="builder">Builder</option>
+        <option value="command">Command</option>
+      </select>
+
+      <button class="hbtn" id="btn-export"   title="Export diagram as SVG">↓ SVG</button>
+      <button class="hbtn" id="btn-download" title="Download Python + SVG as ZIP">⬇ ZIP</button>
+      <!-- <button class="hbtn" id="btn-theme" title="Toggle dark/light mode">☾ Dark</button> -->
+    </div>
+  </header>
+
+  <!-- ── Main split layout ──────────────────────────────────────────── -->
+  <div id="split-container">
+
+    <!-- Left: code editor -->
+    <div id="editor-pane">
+      <div class="pane-label">Python  <span class="kbd">⌘↩</span> force refresh</div>
+      <textarea id="code-editor"></textarea>
+    </div>
+
+    <!-- Draggable splitter -->
+    <div id="splitter" title="Drag to resize"></div>
+
+    <!-- Right: diagram -->
+    <div id="diagram-pane">
+      <div id="diagram-label-row">
+        <span class="pane-label" style="border:none;padding:0;background:transparent;">UML Class Diagram</span>
+        <div id="zoom-controls">
+          <button class="zbtn" id="btn-zoom-out" title="Zoom out">−</button>
+          <span id="zoom-level">100%</span>
+          <button class="zbtn" id="btn-zoom-in"  title="Zoom in">+</button>
+          <button class="zbtn" id="btn-zoom-fit" title="Reset zoom" style="width:auto;padding:0 6px;font-size:11px;">fit</button>
+        </div>
+      </div>
+      <div id="diagram-output">
+        <div class="empty-state">Start typing Python classes<br>to see the diagram here.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Status bar ─────────────────────────────────────────────────── -->
+  <div id="status-bar">
+    <span class="status status-idle" id="status">ready</span>
+    <span class="status-credit">Built by <a href="https://bythebug.github.io" target="_blank" rel="noopener">bythebug</a> (Suraj Verma)</span>
+  </div>
+
+  <!-- ── Dependencies (CDN) ─────────────────────────────────────────── -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <!-- ── App modules ────────────────────────────────────────────────── -->
+  <script src="parser.js"></script>
+  <script src="patterns.js"></script>
+  <script src="renderer.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>
