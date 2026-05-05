@@ -120,7 +120,8 @@ function parseClasses(code) {
   const stack = [];
   let pendingDecorators = [];
 
-  for (const raw of lines) {
+  for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+    const raw = lines[lineIdx];
     const trimmed = raw.trimStart();
     if (!trimmed || trimmed.startsWith('#')) {
       pendingDecorators = [];
@@ -148,6 +149,7 @@ function parseClasses(code) {
       if (classMatch && indent === 0) {
         const [, name, parentsRaw] = classMatch;
         const cls = makeClass(name, parentsRaw, pendingDecorators);
+        cls.lineNumber = lineIdx;
         classes.set(name, cls);
         stack.push({
           cls,
@@ -185,6 +187,7 @@ function parseClasses(code) {
     if (classMatch && cbi !== null && indent === cbi && !frame.currentMethodName) {
       const [, name, parentsRaw] = classMatch;
       const cls = makeClass(name, parentsRaw, pendingDecorators);
+      cls.lineNumber = lineIdx;
       classes.set(name, cls);
       stack.push({
         cls,

@@ -187,9 +187,102 @@
     };
   }
 
-  // ── Click-to-jump: class box in diagram → class definition in editor ────
-  // After each render, attaches click handlers to every Mermaid class node.
-  // Clicking a box scrolls the editor to that class and flashes the line.
+  // ── Two-way class highlighting: editor ↔ diagram ────────────────────────
+  //
+  // Editor → Diagram (live): as the cursor moves, the class box that contains
+  //   the current line glows in the diagram.
+  //
+  // Diagram → Editor (click): clicking a class box highlights that class's
+  //   entire code block in the editor (persistent, not fading) and scrolls to it.
+  //
+  // Both directions share a single "active class" state so they stay in sync.
+
+  let activeClassName   = null;   // which class is currently active
+  let activeLineHandles = [];     // CodeMirror line handles for editor highlight
+  let lastClasses       = new Map(); // class map from last successful render
+
+  // ── Compute start/end line ranges for each class ─────────────────────────
+  // endLine = line before the next peer class at the same or lower indent,
+  // or the last line of the file.
+  function computeClassRanges(classes, code) {
+    const lines = code.split('\n');
+    for (const [, cls] of classes) {
+      if (cls.lineNumber === undefined) continue;
+      const classIndent = getIndent(lines[cls.lineNumber] || '');
+      let endLine = lines.length - 1;
+      for (let j = cls.lineNumber + 1; j < lines.length; j++) {
+        const t = lines[j].trimStart();
+        if (!t) continue; // blank line — keep scanning
+        if (getIndent(lines[j]) <= classIndent) { endLine = j - 1; break; }
+      }
+      cls.endLine = endLine;
+    }
+  }
+
+  // ── Which class does line `n` belong to? ─────────────────────────────────
+  // Returns the innermost class whose [lineNumber, endLine] range contains n.
+  function classAtLine(lineNum) {
+    let best = null;
+    let bestStart = -1;
+    for (const [name, cls] of lastClasses) {
+      if (cls.lineNumber === undefined || cls.endLine === undefined) continue;
+      if (lineNum >= cls.lineNumber && lineNum <= cls.endLine) {
+        // Prefer the innermost (latest start = most nested)
+        if (cls.lineNumber > bestStart) { best = name; bestStart = cls.lineNumber; }
+      }
+    }
+    return best;
+  }
+
+  // ── Diagram highlight ─────────────────────────────────────────────────────
+  function clearDiagramHighlight() {
+    if (!lastSvgEl) return;
+    lastSvgEl.querySelectorAll('.lld-active').forEach(el => el.classList.remove('lld-active'));
+  }
+
+  function applyDiagramHighlight(name) {
+    if (!lastSvgEl || !name) return;
+    const el = lastSvgEl.querySelector(`[data-lld-class="${CSS.escape(name)}"]`);
+    if (el) el.classList.add('lld-active');
+  }
+
+  // ── Editor highlight ──────────────────────────────────────────────────────
+  function clearEditorHighlight() {
+    activeLineHandles.forEach(h => editor.removeLineClass(h, 'wrap', 'lld-editor-active'));
+    activeLineHandles = [];
+  }
+
+  function applyEditorHighlight(name) {
+    if (!lastClasses.has(name)) return;
+    const cls = lastClasses.get(name);
+    if (cls.lineNumber === undefined) return;
+    const end = cls.endLine !== undefined ? cls.endLine : cls.lineNumber;
+    for (let i = cls.lineNumber; i <= end; i++) {
+      activeLineHandles.push(editor.addLineClass(i, 'wrap', 'lld-editor-active'));
+    }
+  }
+
+  // ── Set the active class (both sides update together) ─────────────────────
+  function setActiveClass(name, { scrollEditor = false } = {}) {
+    if (name === activeClassName && !scrollEditor) return;
+    activeClassName = name;
+
+    clearDiagramHighlight();
+    clearEditorHighlight();
+
+    if (name) {
+      applyDiagramHighlight(name);
+      applyEditorHighlight(name);
+      if (scrollEditor && lastClasses.has(name)) {
+        const cls = lastClasses.get(name);
+        editor.focus();
+        editor.setCursor(cls.lineNumber, 0);
+        editor.scrollIntoView({ line: cls.lineNumber, ch: 0 }, 100);
+      }
+    }
+  }
+
+  // ── Wire click handlers onto the SVG after each render ───────────────────
   function wireClassClicks(svgEl, classes) {
     const classNames = new Set(classes.keys());
 
@@ -197,52 +290,20 @@
       const name = textEl.textContent.trim();
       if (!classNames.has(name)) return;
 
-      // Walk up the SVG DOM to find the class-box group.
-      // In Mermaid v10 classDiagram, the class node is a <g> that has
-      // <rect> elements as direct children (the background boxes).
+      // Walk up to the class-box <g> — the one that has <rect> direct children.
       let box = textEl;
       for (let i = 0; i < 8; i++) {
         const p = box.parentElement;
         if (!p || p === svgEl) break;
         box = p;
-        if (box.tagName.toLowerCase() === 'g') {
-          const hasDirectRect = Array.from(box.children)
-            .some(c => c.tagName.toLowerCase() === 'rect');
-          if (hasDirectRect) break;
-        }
+        if (box.tagName.toLowerCase() === 'g' &&
+            Array.from(box.children).some(c => c.tagName.toLowerCase() === 'rect')) break;
       }
 
+      box.dataset.lldClass = name;
       box.style.cursor = 'pointer';
-      box.setAttribute('title', `Jump to class ${name}`);
 
-      box.addEventListener('click', () => {
-        // Find the line in the editor
-        const lines = editor.getValue().split('\n');
-        let targetLine = -1;
-        for (let i = 0; i < lines.length; i++) {
-          const m = lines[i].match(/^class\s+(\w+)/);
-          if (m && m[1] === name) { targetLine = i; break; }
-        }
-        if (targetLine < 0) return;
-
-        // Jump in editor
-        editor.focus();
-        editor.setCursor(targetLine, 0);
-        editor.scrollIntoView({ line: targetLine, ch: 0 }, 150);
-
-        // Flash the class definition line
-        const lineLen = editor.getLine(targetLine).length;
-        const mark = editor.markText(
-          { line: targetLine, ch: 0 },
-          { line: targetLine, ch: lineLen },
-          { className: 'cm-jump-highlight' }
-        );
-        setTimeout(() => mark.clear(), 1400);
-
-        // Brief glow on the diagram box to confirm the click
-        box.classList.add('lld-box-pulse');
-        setTimeout(() => box.classList.remove('lld-box-pulse'), 600);
-      });
+      box.addEventListener('click', () => setActiveClass(name, { scrollEditor: true }));
     });
   }
 
@@ -296,6 +357,12 @@
     clearTimeout(debounceTimer);
     setStatus('typing…', 'idle');
     debounceTimer = setTimeout(() => render(false), 400);
+  });
+
+  // ── Editor → Diagram: highlight class box as cursor moves ────────────────
+  editor.on('cursorActivity', () => {
+    const name = classAtLine(editor.getCursor().line);
+    setActiveClass(name);
   });
 
   // Auto-trigger autocomplete while typing (skip navigation/modifier keys)
@@ -360,9 +427,17 @@
         colorizeDiagram(svgEl, isDark);
         wireClassClicks(svgEl, classes);
         lastSvgEl = svgEl;
-        // Reapply current zoom
         applyZoom();
       }
+
+      // Store classes with line ranges so cursorActivity can use them
+      lastClasses = classes;
+      computeClassRanges(lastClasses, code);
+
+      // Re-apply active highlight (diagram was just re-rendered from scratch)
+      activeClassName = null; // force refresh
+      const cursorLine = editor.getCursor().line;
+      setActiveClass(classAtLine(cursorLine));
 
       updatePatternBadges(patterns);
       setStatus(
