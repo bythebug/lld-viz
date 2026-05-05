@@ -49,12 +49,15 @@ const DIAGRAM_COLORS = {
     pattern:   { fill: '#ffec51', stroke: '#ff674d', sw: '2.5px' },
     // Concrete  → Light Yellow fill, Periwinkle border
     concrete:  { fill: '#fffbdb', stroke: '#cdc7e5', sw: '1.5px' },
+    // Enum      → Mint fill, teal border
+    enum:      { fill: '#e8f5e9', stroke: '#66bb6a', sw: '1.5px' },
   },
   dark: {
     abstract:  { fill: '#2E2060', stroke: '#cdc7e5', sw: '2px' },
     protocol:  { fill: '#3A2D00', stroke: '#ffec51', sw: '2px' },
     pattern:   { fill: '#3A2D00', stroke: '#ffec51', sw: '2.5px' },
     concrete:  { fill: '#1E1A0A', stroke: '#7776bc', sw: '1.5px' },
+    enum:      { fill: '#0D2B0F', stroke: '#66bb6a', sw: '1.5px' },
   },
 };
 
@@ -80,6 +83,12 @@ function generateMermaid(classes, relationships, patterns, isDark = false) {
       bodyLines.push('<<Protocol>>');
     } else if (cls.isAbstract) {
       bodyLines.push('<<Abstract>>');
+    } else if (cls.isEnum) {
+      bodyLines.push('<<Enum>>');
+    } else if (cls.isNamedTuple) {
+      bodyLines.push('<<NamedTuple>>');
+    } else if (cls.isTypedDict) {
+      bodyLines.push('<<TypedDict>>');
     } else if (pattern) {
       bodyLines.push(`<<${pattern}>>`);
     }
@@ -148,6 +157,8 @@ function generateMermaid(classes, relationships, patterns, isDark = false) {
     let c;
     if (cls.isAbstract || cls.isProtocol) {
       c = cls.isProtocol ? COLORS.protocol : COLORS.abstract;
+    } else if (cls.isEnum || cls.isNamedTuple || cls.isTypedDict) {
+      c = COLORS.enum;
     } else if (pat) {
       c = COLORS.pattern;
     } else {
