@@ -187,6 +187,65 @@
     };
   }
 
+  // ── Click-to-jump: class box in diagram → class definition in editor ────
+  // After each render, attaches click handlers to every Mermaid class node.
+  // Clicking a box scrolls the editor to that class and flashes the line.
+  function wireClassClicks(svgEl, classes) {
+    const classNames = new Set(classes.keys());
+
+    svgEl.querySelectorAll('text').forEach(textEl => {
+      const name = textEl.textContent.trim();
+      if (!classNames.has(name)) return;
+
+      // Walk up the SVG DOM to find the class-box group.
+      // In Mermaid v10 classDiagram, the class node is a <g> that has
+      // <rect> elements as direct children (the background boxes).
+      let box = textEl;
+      for (let i = 0; i < 8; i++) {
+        const p = box.parentElement;
+        if (!p || p === svgEl) break;
+        box = p;
+        if (box.tagName.toLowerCase() === 'g') {
+          const hasDirectRect = Array.from(box.children)
+            .some(c => c.tagName.toLowerCase() === 'rect');
+          if (hasDirectRect) break;
+        }
+      }
+
+      box.style.cursor = 'pointer';
+      box.setAttribute('title', `Jump to class ${name}`);
+
+      box.addEventListener('click', () => {
+        // Find the line in the editor
+        const lines = editor.getValue().split('\n');
+        let targetLine = -1;
+        for (let i = 0; i < lines.length; i++) {
+          const m = lines[i].match(/^class\s+(\w+)/);
+          if (m && m[1] === name) { targetLine = i; break; }
+        }
+        if (targetLine < 0) return;
+
+        // Jump in editor
+        editor.focus();
+        editor.setCursor(targetLine, 0);
+        editor.scrollIntoView({ line: targetLine, ch: 0 }, 150);
+
+        // Flash the class definition line
+        const lineLen = editor.getLine(targetLine).length;
+        const mark = editor.markText(
+          { line: targetLine, ch: 0 },
+          { line: targetLine, ch: lineLen },
+          { className: 'cm-jump-highlight' }
+        );
+        setTimeout(() => mark.clear(), 1400);
+
+        // Brief glow on the diagram box to confirm the click
+        box.classList.add('lld-box-pulse');
+        setTimeout(() => box.classList.remove('lld-box-pulse'), 600);
+      });
+    });
+  }
+
   // ── Mermaid init ──────────────────────────────────────────────────────────
   mermaid.initialize(MERMAID_LIGHT);
 
@@ -299,6 +358,7 @@
         svgEl.style.display = 'block';
         svgEl.style.margin = '0 auto';
         colorizeDiagram(svgEl, isDark);
+        wireClassClicks(svgEl, classes);
         lastSvgEl = svgEl;
         // Reapply current zoom
         applyZoom();
