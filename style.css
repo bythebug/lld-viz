@@ -534,16 +534,15 @@ li.CodeMirror-hint-active {
 
 /* ── Two-way class highlighting ─────────────────────────────────────── */
 
-/* Editor: active class lines get a subtle left accent + tinted background */
+/* Editor: active class lines — subtle tint + left accent bar */
 .lld-editor-active {
   background: rgba(119, 118, 188, 0.10) !important;
   border-left: 3px solid #7776bc !important;
 }
 
-/* Diagram: active class box gets a Tomato drop-shadow glow */
-.lld-active {
-  filter: drop-shadow(0 0 6px rgba(255, 103, 77, 0.85));
-}
+/* Diagram: highlight rect is injected as SVG <rect class="lld-highlight-overlay">
+   directly into the class-box group via getBBox(). No CSS needed for the overlay
+   itself — it's styled via SVG attributes (stroke, fill, rx). */
 
 /* ── Scrollbars ─────────────────────────────────────────────────────── */
 #diagram-output::-webkit-scrollbar { width: 8px; height: 8px; }

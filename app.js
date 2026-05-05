@@ -197,9 +197,10 @@
   //
   // Both directions share a single "active class" state so they stay in sync.
 
-  let activeClassName   = null;   // which class is currently active
-  let activeLineHandles = [];     // CodeMirror line handles for editor highlight
-  let lastClasses       = new Map(); // class map from last successful render
+  let activeClassName   = null;        // which class is currently active
+  let activeLineHandles = [];          // CodeMirror line handles for editor highlight
+  let lastClasses       = new Map();   // class map from last successful render
+  let diagramBoxMap     = new Map();   // className → SVG <g> element
 
   // ── Compute start/end line ranges for each class ─────────────────────────
   // endLine = line before the next peer class at the same or lower indent,
@@ -235,15 +236,40 @@
   }
 
   // ── Diagram highlight ─────────────────────────────────────────────────────
+  // We inject a <rect> overlay directly into the class-box group using getBBox()
+  // so we don't rely on CSS filter (which gets clipped by the SVG viewport).
   function clearDiagramHighlight() {
     if (!lastSvgEl) return;
-    lastSvgEl.querySelectorAll('.lld-active').forEach(el => el.classList.remove('lld-active'));
+    lastSvgEl.querySelectorAll('.lld-highlight-overlay').forEach(el => el.remove());
   }
 
   function applyDiagramHighlight(name) {
-    if (!lastSvgEl || !name) return;
-    const el = lastSvgEl.querySelector(`[data-lld-class="${CSS.escape(name)}"]`);
-    if (el) el.classList.add('lld-active');
+    if (!name) return;
+    const box = diagramBoxMap.get(name);
+    if (!box) return;
+
+    // Remove any stale overlay on this box
+    box.querySelector('.lld-highlight-overlay')?.remove();
+
+    // Use getBBox() to get the tight bounding box of the class group's content,
+    // then draw a highlight rect on top (in the group's own coordinate space).
+    let bb;
+    try { bb = box.getBBox(); } catch { return; }
+    if (!bb || bb.width === 0) return;
+
+    const NS = 'http://www.w3.org/2000/svg';
+    const overlay = document.createElementNS(NS, 'rect');
+    overlay.setAttribute('x',      bb.x - 3);
+    overlay.setAttribute('y',      bb.y - 3);
+    overlay.setAttribute('width',  bb.width  + 6);
+    overlay.setAttribute('height', bb.height + 6);
+    overlay.setAttribute('rx', '6');
+    overlay.setAttribute('fill', 'none');
+    overlay.setAttribute('stroke', '#ff674d');
+    overlay.setAttribute('stroke-width', '2.5');
+    overlay.setAttribute('class', 'lld-highlight-overlay');
+    overlay.style.pointerEvents = 'none';
+    box.appendChild(overlay);
   }
 
   // ── Editor highlight ──────────────────────────────────────────────────────
@@ -284,13 +310,15 @@
 
   // ── Wire click handlers onto the SVG after each render ───────────────────
   function wireClassClicks(svgEl, classes) {
+    diagramBoxMap.clear();
     const classNames = new Set(classes.keys());
 
     svgEl.querySelectorAll('text').forEach(textEl => {
       const name = textEl.textContent.trim();
       if (!classNames.has(name)) return;
+      if (diagramBoxMap.has(name)) return; // only register first match per class
 
-      // Walk up to the class-box <g> — the one that has <rect> direct children.
+      // Walk up to the class-box <g>: the one with <rect> direct children.
       let box = textEl;
       for (let i = 0; i < 8; i++) {
         const p = box.parentElement;
@@ -300,7 +328,7 @@
             Array.from(box.children).some(c => c.tagName.toLowerCase() === 'rect')) break;
       }
 
-      box.dataset.lldClass = name;
+      diagramBoxMap.set(name, box);
       box.style.cursor = 'pointer';
 
       box.addEventListener('click', () => setActiveClass(name, { scrollEditor: true }));
